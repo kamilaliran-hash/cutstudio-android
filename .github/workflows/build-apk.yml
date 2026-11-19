@@ -1,0 +1,42 @@
+name: Build CutStudio APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # lets the job publish the APK as a Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk CutStudio.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CutStudio-APK
+          path: CutStudio.apk
+
+      - name: Publish as a Release (direct download link)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: CutStudio build ${{ github.run_number }}
+          body: Install CutStudio.apk on your Android phone (Android 8.0 or newer).
+          files: CutStudio.apk
+          make_latest: true
